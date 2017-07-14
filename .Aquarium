@@ -11,8 +11,8 @@
   <item name="backups">0</item>
  </group>
  <group name="windows">
-  <item id="AOs::Aquarium::SM">-273,0,1026,915</item>
-  <item id=".::Aquarium.ino">0,0,753,726,*</item>
+  <item id="AOs::Aquarium::SM">0,0,753,726,*</item>
+  <item id=".::Aquarium.ino">0,0,753,726</item>
  </group>
  <group name="search">
   <item name="options">4129280</item>
