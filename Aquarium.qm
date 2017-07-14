@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="4.0.1" links="0">
+ <documentation>Aquarium control with Arduino UNO
+
+Explanation:
+There is an operational state and an emergency state.
+
+In the operational state the water can be drained if the temperature becomes to high.
+Is the low level reached the aquarium will be filled up to the high level.
+
+Whenever the water leak sensor detects lost of water underneath the aquarium the control switches in the emergency state and everything goes off.
+The aquarium control has to be restarted.
+
+The transitional events can come from the SerialTerm (e = emergency, t = temperature, l = level low, h = level high) or the switches connected to the input pins.
+Because the internal pullup resistors of the input pins is used, the logic is inverse.
+
+The actions goes to the output pins and the SerialTerm.
+
+The states are also printed to SerialTerm.</documentation>
+ <framework name="qpn"/>
+ <package name="AOs" stereotype="0x02">
+  <class name="Aquarium" superclass="qpn::QActive">
+   <statechart>
+    <initial target="../1">
+     <initial_glyph conn="3,3,5,1,33,4,-2">
+      <action box="0,-2,4,2"/>
+     </initial_glyph>
+    </initial>
+    <state name="operationalState">
+     <entry brief="MAIN_WATER_SUPPLY_VALVE_on">BSP_showState(&quot;operationalState&quot;);
+BSP_signalValves(MAIN_WATER_SUPPLY_VALVE_on);</entry>
+     <exit brief="MAIN_WATER_SUPPLY_VALVE_off">BSP_signalValves(MAIN_WATER_SUPPLY_VALVE_off);</exit>
+     <initial target="../2">
+      <initial_glyph conn="4,12,5,1,22,4,-2">
+       <action box="0,-2,4,2"/>
+      </initial_glyph>
+     </initial>
+     <tran trig="WATER_LEAK_SENSOR" target="../../2">
+      <tran_glyph conn="2,44,3,1,34,4,-12">
+       <action box="0,-2,19,2"/>
+      </tran_glyph>
+     </tran>
+     <state name="sleepModeState">
+      <entry>BSP_showState(&quot;sleepModeState&quot;);</entry>
+      <tran trig="TEMPERATURE_SENSOR" target="../../3">
+       <tran_glyph conn="4,20,3,1,26,4,-2">
+        <action box="0,-2,20,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="4,14,20,7">
+       <entry box="1,2,4,2"/>
+      </state_glyph>
+     </state>
+     <state name="waterDrainState">
+      <entry brief="WATER_DRAIN_VALVE_on">BSP_showState(&quot;waterDrainState&quot;);
+BSP_signalValves(WATER_DRAIN_VALVE_on);</entry>
+      <exit brief="WATER_DRAIN_VALVE_off">BSP_signalValves(WATER_DRAIN_VALVE_off);</exit>
+      <tran trig="LOW_LEVEL_SENSOR" target="../../4">
+       <tran_glyph conn="4,30,3,1,26,4,-2">
+        <action box="0,-2,18,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="4,22,24,9">
+       <entry box="1,2,23,2"/>
+       <exit box="1,4,22,2"/>
+      </state_glyph>
+     </state>
+     <state name="waterFillState">
+      <entry brief="WATER_FILL_VALVE_on">BSP_showState(&quot;waterFillState&quot;);
+BSP_signalValves(WATER_FILL_VALVE_on);</entry>
+      <exit brief="WATER_FILL_VALVE_off">BSP_signalValves(WATER_FILL_VALVE_off);</exit>
+      <tran trig="HIGH_LEVEL_SENSOR" target="../../2">
+       <tran_glyph conn="4,40,3,1,28,-22,-8">
+        <action box="0,-2,19,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="4,32,24,9">
+       <entry box="1,2,21,2"/>
+       <exit box="1,4,21,2"/>
+      </state_glyph>
+     </state>
+     <state_glyph node="2,5,32,40">
+      <entry box="1,2,28,2"/>
+      <exit box="1,4,28,2"/>
+     </state_glyph>
+    </state>
+    <state name="emergencyState">
+     <entry brief="EMERGENCY_LIGHT_on">BSP_showState(&quot;emergencyState&quot;);
+BSP_signalValves(EMERGENCY_LIGHT_on);</entry>
+     <state_glyph node="2,46,22,6">
+      <entry box="1,2,21,2"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="38,54"/>
+   </statechart>
+  </class>
+ </package>
+ <directory name=".">
+  <file name="Aquarium.ino">
+   <text>#include &quot;qpn.h&quot;     // QP-nano framework
+#include &quot;Arduino.h&quot; // Arduino API
+
+//============================================================================
+// events used in this application...
+enum AquariumSignals {
+    WATER_LEAK_SENSOR_SIG = Q_USER_SIG, // water leakage is detected
+    TEMPERATURE_SENSOR_SIG,             // water temperature is to high
+    LOW_LEVEL_SENSOR_SIG,               // water level low is reached
+    HIGH_LEVEL_SENSOR_SIG               // water level high is reached
+};
+
+//============================================================================
+// declare all AO classes...
+$declare(AOs::Aquarium)
+//...
+
+// define all AO instances and event queue buffers for them...
+Aquarium AO_Aquarium;
+static QEvt l_aquariumQSto[10]; // Event queue storage for Aquarium
+//...
+
+//============================================================================
+// QF_active[] array defines all active object control blocks ----------------
+QMActiveCB const Q_ROM QF_active[] = {
+    { (QMActive *)0,            (QEvt *)0,      0U                    },
+    { (QMActive *)&amp;AO_Aquarium, l_aquariumQSto, Q_DIM(l_aquariumQSto) }
+};
+
+//============================================================================
+// Board Support Package (BSP)
+enum BSP_ValvesSignal { // valve signals ...
+    EMERGENCY_LIGHT_on,
+    MAIN_WATER_SUPPLY_VALVE_on,
+    MAIN_WATER_SUPPLY_VALVE_off,
+    WATER_DRAIN_VALVE_on,
+    WATER_DRAIN_VALVE_off,
+    WATER_FILL_VALVE_on,
+    WATER_FILL_VALVE_off
+};
+
+// various other constants for the application...
+enum {
+    BSP_TICKS_PER_SEC = 100, // number of system clock ticks in one second
+
+    // the pin number of the on-board input
+    WATER_LEAK_SENSOR = 2,
+    TEMPERATURE_SENSOR = 3,
+    LOW_LEVEL_SENSOR = 4,
+    HIGH_LEVEL_SENSOR = 5,
+
+    // the pin number of the on-board output
+    EMERGENCY_LIGHT = 6,
+    MAIN_WATER_SUPPLY_VALVE = 7,
+    WATER_DRAIN_VALVE = 8,
+    WATER_FILL_VALVE = 9,
+};
+
+//............................................................................
+void BSP_signalValves(enum BSP_ValvesSignal sig) {
+    switch (sig) {
+        case EMERGENCY_LIGHT_on:
+            Serial.println(F(&quot;EMERGENCY_LIGHT_on&quot;));
+            digitalWrite(EMERGENCY_LIGHT, HIGH);
+            break;
+        case MAIN_WATER_SUPPLY_VALVE_on:
+            Serial.println(F(&quot;MAIN_WATER_SUPPLY_VALVE_on&quot;));
+            digitalWrite(MAIN_WATER_SUPPLY_VALVE, HIGH);
+            break;
+        case MAIN_WATER_SUPPLY_VALVE_off:
+            Serial.println(F(&quot;MAIN_WATER_SUPPLY_VALVE_off&quot;));
+            digitalWrite(MAIN_WATER_SUPPLY_VALVE, LOW);
+            break;
+        case WATER_DRAIN_VALVE_on:
+            Serial.println(F(&quot;WATER_DRAIN_VALVE_on&quot;));
+            digitalWrite(WATER_DRAIN_VALVE, HIGH);
+            break;
+        case WATER_DRAIN_VALVE_off:
+            Serial.println(F(&quot;WATER_DRAIN_VALVE_off&quot;));
+            digitalWrite(WATER_DRAIN_VALVE, LOW);
+            break;
+        case WATER_FILL_VALVE_on:
+            Serial.println(F(&quot;WATER_FILL_VALVE_on&quot;));
+            digitalWrite(WATER_FILL_VALVE, HIGH);
+            break;
+        case WATER_FILL_VALVE_off:
+            Serial.println(F(&quot;WATER_FILL_VALVE_off&quot;));
+            digitalWrite(WATER_FILL_VALVE, LOW);
+            break;
+    }
+}
+
+//............................................................................
+void BSP_showState(char const *state) {
+    Serial.print(F(&quot;State-&gt;&quot;));
+    Serial.println(state);
+}
+
+//............................................................................
+void setup() {
+    // initialize the QF-nano framework
+    QF_init(Q_DIM(QF_active));
+
+    // initialize all AOs...
+    QActive_ctor(&amp;AO_Aquarium.super, Q_STATE_CAST(&amp;Aquarium_initial));
+
+    // initialize the hardware used in this sketch...
+    // set the sensor pins to input and activate the internal pullup resistor
+    pinMode(WATER_LEAK_SENSOR, INPUT_PULLUP);
+    pinMode(TEMPERATURE_SENSOR, INPUT_PULLUP);
+    pinMode(LOW_LEVEL_SENSOR, INPUT_PULLUP);
+    pinMode(HIGH_LEVEL_SENSOR, INPUT_PULLUP);
+
+    // set the EMERGENCY_LIGHT pin to output
+    pinMode(EMERGENCY_LIGHT, OUTPUT);
+    // set the valve pins to outputs
+    pinMode(MAIN_WATER_SUPPLY_VALVE, OUTPUT);
+    pinMode(WATER_DRAIN_VALVE, OUTPUT);
+    pinMode(WATER_FILL_VALVE, OUTPUT);
+
+    Serial.begin(115200); // set the highest standard baud rate of 115200 bps
+    Serial.print(F(&quot;Start, QP-nano version: &quot;));
+    Serial.println(QP_VERSION);
+    Serial.println(&quot;&quot;);
+    Serial.println(F(&quot;Aquarium control&quot;));
+    Serial.println(&quot;&quot;);
+}
+//............................................................................
+void loop() {
+    QF_run(); // run the QP-nano application
+}
+
+//============================================================================
+// interrupts...
+ISR(TIMER2_COMPA_vect) {
+    QF_tickXISR(0); // process time events for tick rate 0
+
+    // read inputs over Serial
+    if (Serial.available() &gt; 0) {
+        switch (Serial.read()) { // read the incoming byte
+            // events are posted directly instead of publishing
+            case 'e':
+            case 'E':
+                QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, WATER_LEAK_SENSOR_SIG, 0U);
+                break;
+            case 't':
+            case 'T':
+                QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, TEMPERATURE_SENSOR_SIG, 0U);
+                break;
+            case 'l':
+            case 'L':
+                QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, LOW_LEVEL_SENSOR_SIG, 0U);
+                break;
+            case 'h':
+            case 'H':
+                QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, HIGH_LEVEL_SENSOR_SIG, 0U);
+                break;
+        }
+    }
+
+    // read the digital inputs
+    // low active because of the internal pullup resistor
+    // events are posted directly instead of publishing
+    if (digitalRead(WATER_LEAK_SENSOR) == LOW) {
+        QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, WATER_LEAK_SENSOR_SIG, 0U);
+    }
+    else if (digitalRead(TEMPERATURE_SENSOR) == LOW) {
+        QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, TEMPERATURE_SENSOR_SIG, 0U);
+    }
+    else if (digitalRead(LOW_LEVEL_SENSOR) == LOW) {
+        QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, LOW_LEVEL_SENSOR_SIG, 0U);
+    }
+    else if (digitalRead(HIGH_LEVEL_SENSOR) == LOW) {
+        QACTIVE_POST_ISR((QMActive *)&amp;AO_Aquarium, HIGH_LEVEL_SENSOR_SIG, 0U);
+    }
+}
+
+//============================================================================
+// QP-nano callbacks...
+void QF_onStartup(void) {
+    // set Timer2 in CTC mode, 1/1024 prescaler, start the timer ticking...
+    TCCR2A = (1U &lt;&lt; WGM21) | (0U &lt;&lt; WGM20);
+    TCCR2B = (1U &lt;&lt; CS22 ) | (1U &lt;&lt; CS21) | (1U &lt;&lt; CS20); // 1/2^10
+    ASSR  &amp;= ~(1U &lt;&lt; AS2);
+    TIMSK2 = (1U &lt;&lt; OCIE2A); // enable TIMER2 compare Interrupt
+    TCNT2  = 0U;
+
+    // set the output-compare register based on the desired tick frequency
+    OCR2A  = (F_CPU / BSP_TICKS_PER_SEC / 1024U) - 1U;
+}
+//............................................................................
+void QV_onIdle(void) { // called with interrupts DISABLED
+    // Put the CPU and peripherals to the low-power mode. You might
+    // need to customize the clock management for your application,
+    // see the datasheet for your particular AVR MCU.
+    SMCR = (0 &lt;&lt; SM0) | (1 &lt;&lt; SE); // idle mode, adjust to your project
+    QV_CPU_SLEEP(); // atomically go to sleep and enable interrupts
+}
+//............................................................................
+void Q_onAssert(char const Q_ROM * const file, int line) {
+    // implement the error-handling policy for your application!!!
+    QF_INT_DISABLE(); // disable all interrupts
+    QF_RESET(); // reset the CPU
+}
+
+//============================================================================
+// define all AO classes (state machines)...
+$define(AOs::Aquarium)
+//...
+</text>
+  </file>
+ </directory>
+</model>
