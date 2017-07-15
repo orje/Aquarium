@@ -3,7 +3,7 @@
 Das sind meine ersten Versuche mit dem Quantum Leaps' QP™-nano active object framework und dem QM™ modeling tool. 
 http://playground.arduino.cc/Code/QP
 
-Mir gefallen die verschiedenen Komponenten des frameworks, wie z.B. die verschachtelten states, welche mir viel doppelte Arbeit ersparen. Ich muss dadurch z.B. nicht alle states einzeln mit dem NotAus-Signal verknüpfen, sondern nur einmalig mit dem obersten state, da ein event automatisch von einem substate an den jeweils höheren state weitergeleitet wird, ggf. so oft, bzw. so lange bis er den zugehörigen state erreicht hat.
+Mir gefallen die verschiedenen Komponenten des frameworks, wie z.B. die verschachtelten states, welche mir doppelte Arbeit ersparen. Ich muss dadurch z.B. nicht alle states einzeln mit dem NotAus-Signal verknüpfen, sondern nur einmalig mit dem obersten state, da ein event automatisch von einem substate an den jeweils höheren state weitergeleitet wird, ggf. so oft, bzw. so lange bis er den zugehörigen state erreicht hat.
 
 Dazu kommt die Möglichkeit der Programmierung von entry und exit actions für jeden state, wodurch ich eine Aktion beim Betreten ein- und beim Verlassen ausschalten kann. Das ist eine sehr aufgeräumte Methode.
 
