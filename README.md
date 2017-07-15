@@ -9,4 +9,6 @@ Dazu kommt die Möglichkeit der Programmierung von entry und exit actions für j
 Ferner muss ich die Eingangssignale nicht verriegeln und entprellen, da beim ersten Auftreten eines Signals entweder in den nächsten state gewechselt wird oder im bereits aktiven verblieben wird.
 
 Hat man in der ino-Datei alle benötigten Signale deklariert, kann man mit dem modeling tool sehr übersichtlich die Programmstruktur erstellen und in den og. entry und exit actions programmieren.
-Das modeling tool hilft m. E. tatsächlich sein Programm aufgeräumt und übersichtlich zu strukturieren und damit auch es selbst oder durch andere einfacher zu benutzen.
+Das modeling tool hilft m. E. tatsächlich sein Programm aufgeräumt und übersichtlich zu strukturieren und damit auch, es selbst oder durch andere einfacher zu benutzen.
+
+Als Basis für mein model habe ich das pelican-Beispiel benutzt.
