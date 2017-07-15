@@ -7,7 +7,7 @@ Mir gefallen die verschiedenen Komponenten des frameworks, wie z.B. die verschac
 
 Dazu kommt die Möglichkeit der Programmierung von entry und exit actions für jeden state, wodurch ich eine Aktion beim Betreten ein- und beim Verlassen ausschalten kann. Das ist eine sehr aufgeräumte Methode.
 
-Ferner muss ich die Eingangssignale nicht verriegeln und entprellen, da beim ersten Auftreten eines Signals entweder in den nächsten state gewechselt wird oder im bereits aktiven verblieben wird.
+Ferner muss ich die Eingangssignale nicht verriegeln und entprellen, da beim Auftreten eines Signals entweder in den nächsten state gewechselt wird oder im bereits aktiven verblieben wird oder es wird, als außerhalb des Kontextes auftretend, ignoriert.
 
 Hat man in der ino-Datei alle benötigten Signale deklariert, kann man mit dem modeling tool sehr übersichtlich die Programmstruktur erstellen und in den og. entry und exit actions programmieren.
 Das modeling tool hilft m. E. tatsächlich sein Programm aufgeräumt und übersichtlich zu strukturieren und damit auch, es selbst oder durch andere einfacher zu benutzen.
